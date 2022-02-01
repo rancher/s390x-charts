@@ -1,0 +1,53 @@
+name: Lint and Test Charts
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request: {}
+
+jobs:
+  setup-terraform:
+    runs-on: self-hosted
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # creating required environment variables for openstack connection
+      - name: Run a one-line script
+        run: |
+          #developer-s390-openrc.sh
+          echo $OS_IDENTITY_API_VERSION
+          echo $OS_NETWORK_API_VERSION
+
+      # Install terraform on self-hosted VM if it doesn't exist
+      - name: Install Terraform
+        uses: little-core-labs/install-terraform@v2.0.0
+        with:
+          version: 0.13.4
+
+  deploy-s390x-vm:
+    runs-on: self-hosted
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Run terraform script to launch s390x-VM
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+              - name: Execute Terraform
+        env:
+          stack_name: "s390x-charts-validation"
+          workers: 0
+        run: |
+          terraform -chdir=./openstack_tf_s390x init -input=false
+          terraform -chdir=./openstack_tf_s390x validate
+          terraform -chdir=./openstack_tf_s390x plan -out=tfplan -input=false
+          terraform -chdir=./openstack_tf_s390x apply -input=false tfplan
+
+      # Setup RKE2 Cluster
+      
+      # Run Helm chart linter
+      # Run Basic tests for specific chart-name
