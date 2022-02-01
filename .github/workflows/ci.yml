@@ -5,47 +5,47 @@ on:
       - 'main'
   pull_request: {}
 
+# Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 jobs:
   setup-terraform:
     runs-on: self-hosted
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         uses: actions/checkout@v2
 
       # creating required environment variables for openstack connection
-      - name: Run a one-line script
+      - name: Setup dependencies
         run: |
-          #developer-s390-openrc.sh
+          SUSEConnect -p sle-module-basesystem/15.3/x86_64
+          zypper install -y unzip-6.00-4.8.13
+          # developer-s390-openrc.sh
           echo $OS_IDENTITY_API_VERSION
           echo $OS_NETWORK_API_VERSION
 
       # Install terraform on self-hosted VM if it doesn't exist
       - name: Install Terraform
-        uses: little-core-labs/install-terraform@v2.0.0
+        uses: hashicorp/setup-terraform@v1
         with:
-          version: 0.13.4
+          terraform_version: 1.1.4
 
   deploy-s390x-vm:
+    needs: setup-terraform
     runs-on: self-hosted
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
       # Run terraform script to launch s390x-VM
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
-              - name: Execute Terraform
+      - name: Execute Terraform
         env:
           stack_name: "s390x-charts-validation"
           workers: 0
         run: |
-          terraform -chdir=./openstack_tf_s390x init -input=false
-          terraform -chdir=./openstack_tf_s390x validate
-          terraform -chdir=./openstack_tf_s390x plan -out=tfplan -input=false
-          terraform -chdir=./openstack_tf_s390x apply -input=false tfplan
+          cd openstack_tf_s390x
+          terraform init
+          terraform validate 
+          terraform plan -out=tfplan 
+          terraform apply tfplan -auto-approve
 
       # Setup RKE2 Cluster
       
