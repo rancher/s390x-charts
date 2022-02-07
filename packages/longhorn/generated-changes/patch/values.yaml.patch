@@ -1,0 +1,64 @@
+--- charts-original/values.yaml
++++ charts/values.yaml
+@@ -8,39 +8,39 @@
+ image:
+   longhorn:
+     engine:
+-      repository: longhornio/longhorn-engine
+-      tag: v1.2.3
++      repository: rancherlabs/longhornonz-longhorn-engine
++      tag: v1.2.3-rc3-s390x
+     manager:
+-      repository: longhornio/longhorn-manager
+-      tag: v1.2.3
++      repository: rancherlabs/longhornonz-longhorn-manager
++      tag: v1.2.3-rc6-s390x
+     ui:
+-      repository: longhornio/longhorn-ui
+-      tag: v1.2.3
++      repository: rancherlabs/longhornonz-longhorn-ui
++      tag: v1.2.3-rc0-s390x
+     instanceManager:
+-      repository: longhornio/longhorn-instance-manager
+-      tag: v1_20211210
++      repository: rancherlabs/longhornonz-longhorn-instance-manager
++      tag: v1_20211210-rc1-s390x
+     shareManager:
+-      repository: longhornio/longhorn-share-manager
+-      tag: v1_20211020
++      repository: rancherlabs/longhornonz-longhorn-share-manager
++      tag: v1_20211020-rc0-s390x
+     backingImageManager:
+-      repository: longhornio/backing-image-manager
+-      tag: v2_20210820
++      repository: rancherlabs/longhornonz-backing-image-manager
++      tag: v2_20210820-rc4-s390x
+   csi:
+     attacher:
+-      repository: longhornio/csi-attacher
+-      tag: v3.2.1
++      repository: rancher/mirrored-longhornio-csi-attacher
++      tag: v3.2.1-s390x
+     provisioner:
+-      repository: longhornio/csi-provisioner
+-      tag: v2.1.2
++      repository: rancher/mirrored-longhornio-csi-provisioner
++      tag: v2.1.2-s390x
+     nodeDriverRegistrar:
+-      repository: longhornio/csi-node-driver-registrar
+-      tag: v2.3.0
++      repository: rancher/mirrored-longhornio-csi-node-driver-registrar
++      tag: v2.3.0-s390x
+     resizer:
+-      repository: longhornio/csi-resizer
+-      tag: v1.2.0
++      repository: rancher/mirrored-longhornio-csi-resizer
++      tag: v1.2.0-s390x
+     snapshotter:
+-      repository: longhornio/csi-snapshotter
+-      tag: v3.0.3
++      repository: rancher/mirrored-longhornio-csi-snapshotter
++      tag: v3.0.3-s390x
+   pullPolicy: IfNotPresent
+ 
+ service:
