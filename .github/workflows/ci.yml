@@ -20,7 +20,7 @@ jobs:
           zypper install -y unzip-6.00-4.8.13
           pwd
           ls
-          bash /root/developer-s390-openrc.sh
+          source /root/developer-s390-openrc.sh
           echo $OS_APPLICATION_CREDENTIAL_NAME
           echo $OS_AUTH_TYPE
 
