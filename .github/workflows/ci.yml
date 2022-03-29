@@ -39,9 +39,9 @@ jobs:
 
       # Run terraform script to launch s390x-VM
       - name: Execute Terraform
-        env:
-          stack_name: "s390x-charts-validation"
-          workers: 0
+        # env:
+        #   stack_name: "s390x-charts-validation"
+        #   workers: 0
         run: |
           cd openstack_tf_s390x
           terraform init
