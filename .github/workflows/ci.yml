@@ -1,0 +1,56 @@
+name: Lint and Test Charts
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request: {}
+
+# Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+jobs:
+  setup-terraform:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      # creating required environment variables for openstack connection
+      - name: Setup dependencies
+        run: |
+          SUSEConnect -p sle-module-basesystem/15.3/x86_64
+          zypper install -y unzip-6.00-4.8.13
+
+      # Install terraform on self-hosted VM if it doesn't exist
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.1.4
+
+  deploy-s390x-vm:
+    needs: setup-terraform
+    runs-on: self-hosted
+    steps:
+      # Run terraform script to launch s390x-VM
+      - name: Execute Terraform
+        run: |
+          source /root/developer-s390-openrc.sh
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_shared
+          cd openstack_tf_s390x
+          terraform init
+          terraform validate 
+          terraform apply --auto-approve
+      # TODO: Setup RKE2 Cluster
+      # TODO: Run Helm chart linter
+      # TODO: Run Basic tests for specific chart-name
+
+  destroy-s390x-vm:
+    needs: deploy-s390x-vm
+    runs-on: self-hosted
+    if: ${{ always() }}
+    steps:
+      - name: Execute Terraform
+        run: |
+          source /root/developer-s390-openrc.sh
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_shared
+          cd openstack_tf_s390x
+          terraform destroy --auto-approve
