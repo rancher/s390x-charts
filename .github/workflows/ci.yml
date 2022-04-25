@@ -1,9 +1,9 @@
 name: Lint and Test Charts
 on:
-  push:
+  pull_request:
     branches:
-      - 'main'
-  pull_request: {}
+      - dev-v2.6
+      - release-v2.6
 
 # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 jobs:
@@ -23,6 +23,25 @@ jobs:
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.1.4
+          terraform_wrapper: false
+
+  
+  validate-charts:
+    runs-on: self-hosted
+    steps:
+      # Checking that charts are up to date and can be merged
+      - name: Checkout into branch
+        run: git checkout -b staging-pr-workflow
+
+      - name: Pull scripts
+        run: sudo make pull-scripts
+
+      - name: Pull in all relevant branches
+        run: git fetch origin release
+      
+      - name: Validate 
+        run: sudo make validate
+
 
   deploy-s390x-vm:
     needs: setup-terraform
@@ -38,9 +57,23 @@ jobs:
           terraform init
           terraform validate 
           terraform apply --auto-approve
-      # TODO: Setup RKE2 Cluster
-      # TODO: Run Helm chart linter
-      # TODO: Run Basic tests for specific chart-name
+
+  deploy-rke-&-rancher:
+    needs: deploy-s390x-vm
+    runs-on: self-hosted
+    steps:
+      # Get into s390x-VM & deploy rke
+      - name: Execute Terraform
+        run: |
+          source /root/developer-s390-openrc.sh
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_shared
+          cd openstack_tf_s390x 
+          output=$(terraform output ip_masters)
+          echo $output
+
+
+  # TODO: Run Basic tests for specific chart-name
 
   destroy-s390x-vm:
     needs: deploy-s390x-vm
@@ -50,7 +83,5 @@ jobs:
       - name: Execute Terraform
         run: |
           source /root/developer-s390-openrc.sh
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_shared
           cd openstack_tf_s390x
           terraform destroy --auto-approve
