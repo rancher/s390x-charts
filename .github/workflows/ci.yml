@@ -1,9 +1,10 @@
 name: Lint and Test Charts
 on:
-  push:
+  pull_request:
     branches:
-      - 'main'
-  pull_request: {}
+      - dev-v2.6
+      - release-v2.6
+      - main
 
 # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 jobs:
@@ -17,40 +18,83 @@ jobs:
         run: |
           SUSEConnect -p sle-module-basesystem/15.3/x86_64
           zypper install -y unzip-6.00-4.8.13
+          zypper install -y jq
+          zypper install -y which
+          zypper install patch
 
       # Install terraform on self-hosted VM if it doesn't exist
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.1.4
+          terraform_wrapper: false
 
-  deploy-s390x-vm:
-    needs: setup-terraform
+  validate-charts:
+    needs: [setup-terraform]
     runs-on: self-hosted
     steps:
-      # Run terraform script to launch s390x-VM
-      - name: Execute Terraform
+      # Checking that charts are up to date and can be merged
+      - name: Checkout into branch
         run: |
-          source /root/developer-s390-openrc.sh
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_shared
-          cd openstack_tf_s390x
-          terraform init
-          terraform validate 
-          terraform apply --auto-approve
-      # TODO: Setup RKE2 Cluster
-      # TODO: Run Helm chart linter
-      # TODO: Run Basic tests for specific chart-name
+          git checkout -b staging-pr-workflow
+        
+      - name: Pull scripts
+        run: make pull-scripts
 
-  destroy-s390x-vm:
-    needs: deploy-s390x-vm
+      - name: Validate 
+        run: make validate
+
+  prepare-environment:
+    needs: [validate-charts]
+    runs-on: self-hosted
+    steps:
+      - name: Get Base Repo
+        run: |
+          mkdir openstack_env
+          cd openstack_env
+          git clone --recurse-submodules https://gitlab.suse.de/mkravec/scripts.git
+      
+      - name: Build Validator Container Image
+        run: |
+          cd openstack_env/scripts
+          cp  ~/developer-s390-openrc.sh env.conf
+          ./varke build
+    
+          
+  run-tests:
+    needs: [prepare-environment]
+    runs-on: self-hosted
+    steps:
+      # Testing longhorn chart from the upstream repo
+      - name: Run Tests for Longhorn Chart
+        run: |
+          cd openstack_env/scripts
+          cp  ~/developer-s390-openrc.sh env.conf
+          chmod 400 data/id_shared
+          sed -i 's/\-it//g' varke 
+          ./varke run -n 1:0 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+      
+      # TODO: Uncomment for testing the chart in the rancher/s390x repo
+      # - name: Run Tests for Longhorn Chart
+      #   run: |
+      #     export last_created_dir=$(ls -td charts/longhorn/* | head -1)
+      #     sed '/^helm upgrade --install=true longhorn.*/i cd '"$last_created_dir"'' openstack_env/scripts/tests_s390x/longhorn.sh
+      #     cd openstack_env/scripts
+      #     cp  ~/developer-s390-openrc.sh env.conf
+      #     chmod 400 data/id_shared
+      #     sed -i 's/\-it//g' varke 
+      #     ./varke run -n 1:0 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+      
+
+  destroy-vm:
+    needs: [run-tests]
     runs-on: self-hosted
     if: ${{ always() }}
     steps:
-      - name: Execute Terraform
+      - name: Destroy VM and Clean Cluster
         run: |
+          cd openstack_env/scripts
           source /root/developer-s390-openrc.sh
-          eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_shared
-          cd openstack_tf_s390x
+          export cluster=$(ls | grep 'cluster')
+          cd $cluster/terraform
           terraform destroy --auto-approve
