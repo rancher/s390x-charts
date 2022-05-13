@@ -2,10 +2,8 @@ name: Lint and Test Charts
 on:
   pull_request:
     branches:
-      - dev-v2.6
-      - release-v2.6
-      - main
-
+      - test-upstream-charts
+      
 # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 jobs:
   setup-terraform:
@@ -59,7 +57,6 @@ jobs:
           cd openstack_env/scripts
           cp  ~/developer-s390-openrc.sh env.conf
           ./varke build
-    
           
   run-tests:
     needs: [prepare-environment]
@@ -73,18 +70,6 @@ jobs:
           chmod 400 data/id_shared
           sed -i 's/\-it//g' varke 
           ./varke run -n 1:0 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
-      
-      # TODO: Uncomment for testing the chart in the rancher/s390x repo
-      # - name: Run Tests for Longhorn Chart
-      #   run: |
-      #     export last_created_dir=$(ls -td charts/longhorn/* | head -1)
-      #     sed '/^helm upgrade --install=true longhorn.*/i cd '"$last_created_dir"'' openstack_env/scripts/tests_s390x/longhorn.sh
-      #     cd openstack_env/scripts
-      #     cp  ~/developer-s390-openrc.sh env.conf
-      #     chmod 400 data/id_shared
-      #     sed -i 's/\-it//g' varke 
-      #     ./varke run -n 1:0 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
-      
 
   destroy-vm:
     needs: [run-tests]
