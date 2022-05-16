@@ -2,6 +2,12 @@
 
 This repository contains Helm charts for the s390x arch served by Rancher Apps & Marketplace.
 
+### Branches
+
+- `dev-2.X` branch contains charts that are under active development and will be validated and tested by the CI.
+- `release-v2.X` branch contains charts that have already been developed, tested and validated by the dev-2.x CI.
+- `test-upstream-charts` branch tests and validates charts from the upstream repo of charts to be released. Mostly used by QA team.
+
 ### Making Changes
 
 Since this repository uses [`rancher/charts-build-scripts`](https://github.com/rancher/charts-build-scripts), making changes to this repository involves three steps:
