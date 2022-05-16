@@ -1,2 +1,0 @@
-  - [ SUSEConnect, -r, ${sle_registry_code_s390x} ]
-  - [ SUSEConnect, -p, sle-module-containers/15.2/s390x ]
