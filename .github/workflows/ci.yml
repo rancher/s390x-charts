@@ -1,4 +1,4 @@
-name: Lint and Test Charts
+name: CI
 on:
   pull_request:
     branches:
@@ -64,12 +64,26 @@ jobs:
     steps:
       # Testing longhorn chart from the upstream repo
       - name: Run Tests for Longhorn Chart
+        id: lh
         run: |
           cd openstack_env/scripts
           cp  ~/developer-s390-openrc.sh env.conf
           chmod 400 data/id_shared
           sed -i 's/\-it//g' varke 
-          ./varke run -n 1:0 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+          #./varke run -n 1:2 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+          echo ::set-output name=cluster::"$(ls | grep 'cluster')"
+      
+      - name: Upload # upload event file
+        uses: actions/upload-artifact@v2
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v2  # upload test results
+        with:
+          name: test-results
+          path: "openstack_env/scripts/${{ steps.lh.outputs.cluster }}/logs/longhorn-test-junit-report.xml"
 
   destroy-vm:
     needs: [run-tests]
