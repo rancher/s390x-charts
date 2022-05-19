@@ -20,7 +20,7 @@ jobs:
           zypper install -y which
           zypper install patch
 
-      # Install terraform on self-hosted VM if it doesn't exist
+     # Install terraform on self-hosted VM if it doesn't exist
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v1
         with:
@@ -70,7 +70,7 @@ jobs:
           cp  ~/developer-s390-openrc.sh env.conf
           chmod 400 data/id_shared
           sed -i 's/\-it//g' varke 
-          #./varke run -n 1:2 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+          ./varke run -n 1:2 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
           echo ::set-output name=cluster::"$(ls | grep 'cluster')"
       
       - name: Upload # upload event file
