@@ -1,4 +1,4 @@
-name: Lint and Test Charts
+name: CI
 on:
   pull_request:
     branches:
@@ -66,6 +66,7 @@ jobs:
     steps:
       # Testing longhart chart in the rancher/s390x/charts repo by setting workdir before helm upgrade
       - name: Run Tests for Longhorn Chart
+        id: lh
         run: |
           export last_created_dir=$(ls -td charts/longhorn/* | head -1)
           sed -i '/^helm upgrade --install=true longhorn.*/i git clone -n https://github.com/rancher/s390x-charts.git && cd s390x-charts.git && git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin '"${GITHUB_REF}"' && git checkout -qf FETCH_HEAD && cd '"${last_created_dir}"'' openstack_env/scripts/tests_s390x/longhorn.sh
@@ -73,7 +74,20 @@ jobs:
           cp  ~/developer-s390-openrc.sh env.conf
           chmod 400 data/id_shared
           sed -i 's/\-it//g' varke 
-          ./varke run -n 1:0 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+          ./varke run -n 1:2 -t longhorn -e SUFFIX=s390x-charts-lh -e INTEGRATION=1 -k
+          echo ::set-output name=cluster::"$(ls | grep 'cluster')"
+
+      - name: Upload # upload event file
+        uses: actions/upload-artifact@v2
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v2  # upload test results
+        with:
+          name: test-results
+          path: "openstack_env/scripts/${{ steps.lh.outputs.cluster }}/logs/longhorn-test-junit-report.xml"
 
   destroy-vm:
     needs: [run-tests]
